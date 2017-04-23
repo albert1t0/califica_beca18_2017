@@ -67,22 +67,27 @@ ui <-  fluidPage(
             tabPanel("2. Revisar Tablas",      
                   tabsetPanel(
                         tabPanel("Data",
+                                 h3("Archivo de datos"), hr(),
                                  tableOutput("sobrearchivo1"),
                                  tableOutput("sobrearchivo2")
                                  ),
                         tabPanel("Claves",
+                                 h3("Archivo de claves cargado"), hr(),
                                  tableOutput("sobreclaves")
                                  ),
                         tabPanel("Tabla Calificación",
+                                 h3("La Tabla de calificación del proceso"), hr(),
                                  tableOutput("sobretabla")
                                  )
                   )
             ),
             tabPanel("3. Correctas",
-                     tableOutput("resultado")
+                     h3("Número de correctas por sección"), hr(),
+                     DT::dataTableOutput("resultado")
                      ),
             tabPanel("4. Puntaje Final",
-                     tableOutput("escala")
+                     h3("Resultados finales"), hr(),
+                     DT::dataTableOutput("escala")
                      ),
             tabPanel("5. Descarga de Archivo de Resultados",
                      h3("Descargar archivo de resultados en formato XLSX"),
@@ -139,7 +144,7 @@ server <-  function(input, output, session) {
       
       output$sobrearchivo2 <- renderTable({
             data <- datos()
-            head(data,5)
+            head(data,25)
       })
       
       output$sobreclaves <- renderTable({
@@ -157,19 +162,17 @@ server <-  function(input, output, session) {
             resultado.red <- califica.red(data,clave$correcta)
             resultado.mat <- califica.mat(data,clave$correcta)
             
-            calificado <- data.frame(cbind(
-                  data[,1],
-                  resultado.lec$score,
-                  resultado.red$score,
-                  resultado.mat$score)
-            )
-            names(calificado) <- c("identificador", "correctas.lectura", "correctas.redacción", "correctas.matemática")
+            calificado <- data.frame(data[,1])
+            calificado$correctas.lectura <- resultado.lec$score
+            calificado$correctas.redacción <- resultado.red$score
+            calificado$correctas.matemática <- resultado.mat$score
+            
+            names(calificado)[1] <- "identificador"
             return(calificado)
       })
-      
-      output$resultado <- renderTable({
-            tabla <- correctas()
-            return(tabla)
+
+      output$resultado <- DT::renderDataTable({
+            DT::datatable(correctas(), options = list(lengthMenu = c(10, 20, 50, 100), pageLength = 20))
       })
       
       resultado.final <- reactive({
@@ -185,10 +188,12 @@ server <-  function(input, output, session) {
                                               0.25 * resultado$lectura,0))
             return(resultado[order(resultado$puntaje.final, decreasing = TRUE),])            
       })
-      
-      output$escala <- renderTable({
-            resultado.final()
+     
+      output$escala <- DT::renderDataTable({
+            DT::datatable(resultado.final()[,c(1,5:8)],
+                          options = list(lengthMenu = c(10, 20, 50, 100), pageLength = 20))
       })
+      
       
       output$descargaResultado <- downloadHandler(
             filename = function() {
