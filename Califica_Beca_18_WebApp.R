@@ -58,7 +58,11 @@ ui <-  fluidPage(
                   fileInput("tabla", "Tabla de calificación (.csv):",
                             multiple = FALSE, 
                             accept=c('text/csv', 'text/comma-separated-values,text/plain', '.csv')),
-                  actionButton("procesar", "Procesar", icon = icon("gear"))
+                  actionButton("procesar", "Procesar", icon = icon("gear")),
+                  hr(),
+                  h4(textOutput("registrosCargados1")),
+                  h4(textOutput("registrosCargados2")),
+                  h4(textOutput("registrosCargados3"))
             ),
             tabPanel("2. Revisar Tablas",      
                   tabsetPanel(
@@ -113,6 +117,10 @@ server <-  function(input, output, session) {
             read.csv(inFile$datapath, as.is = TRUE, header = TRUE)
       })
       
+      output$registrosCargados1 <- renderText(paste0("Registros cargados: ", dim(datos())[1]))
+      output$registrosCargados2 <- renderText(paste0("Número de claves: ", dim(claves())[1]))
+      output$registrosCargados3 <- renderText(paste0("Número de registros Tabla (incluye el cero): ", dim(tablas())[1]))
+
       output$sobrearchivo1 <- renderTable({
             data <- datos()
             num.registros <- dim(data)[1]
